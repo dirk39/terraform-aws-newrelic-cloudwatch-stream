@@ -31,6 +31,7 @@ variable "newrelic_iam_role_aws_account_id" {
 variable "newrelic_iam_role_license_key" {
   type        = string
   description = "NewRelic license key"
+  sensitive   = true
 }
 
 variable "newrelic_iam_enable_budget_monitoring" {
@@ -54,4 +55,14 @@ variable "s3_bucket_arn" {
   type        = string
   description = "Firehose S3 backup bucket ARN. Required if `create_s3_bucket` is false"
   default     = ""
+}
+
+variable "firehose_stream_name" {
+  type        = string
+  description = "Firehose stream name"
+}
+
+variable "firehose_datacenter_region" {
+  type        = string
+  description = "Firehose datacenter region. Valid values are EU and US"
 }

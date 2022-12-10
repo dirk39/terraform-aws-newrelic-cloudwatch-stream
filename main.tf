@@ -1,3 +1,12 @@
+data "aws_caller_identity" "current" {}
+
+locals {
+  datacenters = {
+    "US" = "https://aws-api.newrelic.com/cloudwatch-metrics/v1"
+    "EU" = "https://aws-api.eu01.nr-data.net/cloudwatch-metrics/v1"
+  }
+}
+
 ### IAM ###
 resource "aws_iam_role" "newrelic_monitoring_role" {
   count              = var.create_newrelic_iam ? 1 : 0
@@ -72,6 +81,78 @@ resource "aws_s3_bucket_acl" "s3_firehose_backup_bucket" {
   acl    = "private"
 }
 
+resource "aws_kinesis_firehose_delivery_stream" "firehose_newrelic_metric_stream" {
+  name        = var.firehose_stream_name
+  destination = "http_endpoint"
+
+  s3_configuration {
+    role_arn           = aws_iam_role.firehose_newrelic_metric_stream.arn
+    bucket_arn         = try(aws_s3_bucket.s3_firehose_backup_bucket.arn, var.s3_bucket_arn)
+    buffer_size        = 10
+    buffer_interval    = 400
+    compression_format = "GZIP"
+  }
+
+  http_endpoint_configuration {
+    url                = local.datacenters[var.firehose_datacenter_region]
+    name               = "New Relic"
+    access_key         = var.newrelic_license_key
+    buffering_size     = 1
+    buffering_interval = 60
+    role_arn           = aws_iam_role.firehose_newrelic_metric_stream.arn
+    s3_backup_mode     = "FailedDataOnly"
+
+    request_configuration {
+      content_encoding = "GZIP"
+    }
+  }
+}
+
+## KINESIS ROLE
+resource "aws_iam_role" "firehose_newrelic_metric_stream" {
+  name               = "NewRelicFirehoseRole"
+  assume_role_policy = data.aws_iam_policy_document.firehose_newrelic_metric_stream_assume_role.json
+}
+
+data "aws_iam_policy_document" "firehose_newrelic_metric_stream_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      identifiers = ["firehose.amazonaws.com"]
+      type        = "Service"
+    }
+
+    condition {
+      test     = "StringEquals"
+      values   = [data.aws_caller_identity.current.account_id]
+      variable = "sts:ExternalId"
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "firehose_newrelic_metric_stream" {
+  role   = aws_iam_role.iam_kinesis_firehose_newrelic.id
+  policy = data.aws_iam_policy_document.firehose_newrelic_metric_stream_policy.json
+}
+
+data "aws_iam_policy_document" "firehose_newrelic_metric_stream_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:AbortMultipartUpload",
+      "s3:GetBucketLocation",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads",
+      "s3:PutObject"
+    ]
+    resources = [
+      try(aws_s3_bucket.s3_firehose_backup_bucket.arn, var.s3_bucket_arn),
+      format("%s/*", try(aws_s3_bucket.s3_firehose_backup_bucket.arn, var.s3_bucket_arn))
+    ]
+  }
+}
 
 ### CLOUDWATCH STREAM ###
 # resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
@@ -132,87 +213,4 @@ resource "aws_s3_bucket_acl" "s3_firehose_backup_bucket" {
 #     ]
 # }
 # EOF
-# }
-
-# ## KINESIS ROLE
-# resource "aws_iam_role" "iam_kinesis_firehose_newrelic" {
-#   name               = "NewRelicFirehoseRole"
-#   description        = "Firehose role used by NewRelic to push metrics"
-#   assume_role_policy = data.aws_iam_policy_document.kinesis_fh_assume_role.json
-#   tags = merge(var.tags, {
-#     name        = "NewRelicMonitoringRole"
-#     description = "Role used by NewRelic infrastructure to monitor the account"
-#   })
-# }
-
-# data "aws_iam_policy_document" "kinesis_fh_assume_role" {
-#   statement {
-#     actions = ["sts:AssumeRole"]
-
-#     principals {
-#       identifiers = ["firehose.amazonaws.com"]
-#       type        = "Service"
-#     }
-
-#     condition {
-#       test = "StringEquals"
-#       values = [
-#       data.aws_caller_identity.current.account_id]
-#       variable = "sts:ExternalId"
-#     }
-#   }
-# }
-
-# resource "aws_iam_role_policy" "iam_kinesis_firehose_newrelic" {
-#   role   = aws_iam_role.iam_kinesis_firehose_newrelic.id
-#   policy = data.aws_iam_policy_document.iam_kinesis_firehose_newrelic_policy.json
-# }
-
-# data "aws_iam_policy_document" "iam_kinesis_firehose_newrelic_policy" {
-#   statement {
-#     effect = "Allow"
-#     actions = [
-#       "s3:ListBucketMultipartUploads",
-#       "s3:ListBucket",
-#       "logs:CreateLogGroup",
-#       "logs:CreateLogStream",
-#       "logs:PutLogEvents",
-#       "s3:PutObject",
-#       "s3:GetObject",
-#       "s3:AbortMultipartUpload",
-#       "s3:GetBucketLocation",
-#     ]
-#     resources = [
-#       "arn:aws:logs:*:*:log-group:*",
-#       module.newrelic_s3.s3_bucket_arn,
-#       "${module.newrelic_s3.s3_bucket_arn}/*",
-#     ]
-#   }
-# }
-# ### FH
-# resource "aws_kinesis_firehose_delivery_stream" "newrelic_metric_stream_fh" {
-#   name        = "NewRelicMetricStreamFirehose"
-#   destination = "http_endpoint"
-
-#   s3_configuration {
-#     role_arn           = aws_iam_role.iam_kinesis_firehose_newrelic.arn
-#     bucket_arn         = module.newrelic_s3.s3_bucket_arn
-#     buffer_size        = 10
-#     buffer_interval    = 400
-#     compression_format = "GZIP"
-#   }
-
-#   http_endpoint_configuration {
-#     url                = "https://aws-api.eu01.nr-data.net/cloudwatch-metrics/v1"
-#     name               = "New Relic"
-#     access_key         = var.newrelic_license_key
-#     buffering_size     = 1
-#     buffering_interval = 60
-#     role_arn           = aws_iam_role.iam_kinesis_firehose_newrelic.arn
-#     s3_backup_mode     = "FailedDataOnly"
-
-#     request_configuration {
-#       content_encoding = "GZIP"
-#     }
-#   }
 # }
