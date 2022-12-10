@@ -150,62 +150,59 @@ data "aws_iam_policy_document" "firehose_newrelic_metric_stream_policy" {
 }
 
 ### CLOUDWATCH STREAM ###
-# resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
-#   name          = "NewRelicMetricStream"
-#   role_arn      = aws_iam_role.newrelic_metric_stream_role.arn
-#   firehose_arn  = aws_kinesis_firehose_delivery_stream.newrelic_metric_stream_fh.arn
-#   output_format = "opentelemetry0.7"
+resource "aws_cloudwatch_metric_stream" "cw_metric_stream" {
+  name          = var.cw_metric_stream_name
+  role_arn      = aws_iam_role.cw_metric_stream.arn
+  firehose_arn  = aws_kinesis_firehose_delivery_stream.firehose_newrelic_metric_stream.arn
+  output_format = "opentelemetry0.7"
 
-#   include_filter {
-#     namespace = "AWS/EC2"
-#   }
+  dynamic "include_filter" {
+    for_each = var.cw_metric_stream_filters
+    content {
+      namespace = include_filter.value
+    }
+  }
+}
 
-#   include_filter {
-#     namespace = "AWS/EBS"
-#   }
+resource "aws_iam_role" "cw_metric_stream" {
+  name               = "NewRelicMetricStreamRole"
+  assume_role_policy = data.aws_iam_policy_document.cw_metric_stream_assume_role.json
+}
 
-#   include_filter {
-#     namespace = "AWS/RDS"
-#   }
-# }
+data "aws_iam_policy_document" "cw_metric_stream_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
 
-# resource "aws_iam_role" "newrelic_metric_stream_role" {
-#   name = "NewRelicMetricStreamRole"
+    principals {
+      identifiers = ["streams.metrics.cloudwatch.amazonaws.com"]
+      type        = "Service"
+    }
 
-#   assume_role_policy = <<EOF
-# {
-#   "Version": "2012-10-17",
-#   "Statement": [
-#     {
-#       "Action": "sts:AssumeRole",
-#       "Principal": {
-#         "Service": "streams.metrics.cloudwatch.amazonaws.com"
-#       },
-#       "Effect": "Allow",
-#       "Sid": ""
-#     }
-#   ]
-# }
-# EOF
-# }
+    condition {
+      test     = "StringEquals"
+      values   = [data.aws_caller_identity.current.account_id]
+      variable = "sts:ExternalId"
+    }
+  }
+}
 
-# resource "aws_iam_role_policy" "metric_stream_to_firehose" {
-#   name = "FirehosePolicy"
-#   role = aws_iam_role.newrelic_metric_stream_role.id
+resource "aws_iam_role_policy" "metric_stream_to_firehose" {
+  name = "FirehosePolicy"
+  role = aws_iam_role.cw_metric_stream.id
 
-#   policy = <<EOF
-# {
-#     "Version": "2012-10-17",
-#     "Statement": [
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "firehose:PutRecord",
-#                 "firehose:PutRecordBatch"
-#             ],
-#             "Resource": "${aws_kinesis_firehose_delivery_stream.newrelic_metric_stream_fh.arn}"
-#         }
-#     ]
-# }
-# EOF
-# }
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "firehose:PutRecord",
+                "firehose:PutRecordBatch"
+            ],
+            "Resource": "${aws_kinesis_firehose_delivery_stream.firehose_newrelic_metric_stream.arn}"
+        }
+    ]
+}
+EOF
+}

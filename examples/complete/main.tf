@@ -5,10 +5,16 @@ provider "aws" {
 module "newrelic_integration" {
   source = "../.."
 
-  newrelic_iam_role_license_key = "123"
+  newrelic_iam_role_license_key         = "123"
   newrelic_iam_enable_budget_monitoring = true
-  s3_bucket_name = "newrelic-firehose-backup-bucket"
+  s3_bucket_name                        = "newrelic-firehose-backup-bucket"
 
-  firehose_stream_name = "FirehoseStreamToNewRelic"
-  firehose_datacenter_region = "EU" 
+  firehose_stream_name       = "FirehoseStreamToNewRelic"
+  firehose_datacenter_region = "EU"
+  cw_metric_stream_name      = "CloudWatchMetricStreamNR"
+  cw_metric_stream_filters = [
+    "AWS/EC2",
+    "AWS/EBS",
+    "AWS/RDS"
+  ]
 }

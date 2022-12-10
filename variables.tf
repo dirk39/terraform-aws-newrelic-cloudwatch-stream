@@ -47,3 +47,14 @@ variable "firehose_datacenter_region" {
   type        = string
   description = "Firehose datacenter region. Valid values are EU and US"
 }
+
+variable "cw_metric_stream_name" {
+  type        = string
+  description = "CloudWatch metric stream name"
+}
+
+variable "cw_metric_stream_filters" {
+  type        = list
+  description = "List of namespaces to include. If omitted, exports all metrics"
+  default     = []
+}
