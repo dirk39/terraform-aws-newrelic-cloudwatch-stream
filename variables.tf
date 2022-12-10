@@ -1,9 +1,3 @@
-variable "create_newrelic_iam" {
-  type        = bool
-  description = "Controls if NewRelic IAM should be created"
-  default     = true
-}
-
 variable "newrelic_iam_role_name" {
   type        = string
   description = "NewRelic IAM role name"
@@ -31,7 +25,6 @@ variable "newrelic_iam_role_aws_account_id" {
 variable "newrelic_iam_role_license_key" {
   type        = string
   description = "NewRelic license key"
-  sensitive   = true
 }
 
 variable "newrelic_iam_enable_budget_monitoring" {
@@ -40,21 +33,9 @@ variable "newrelic_iam_enable_budget_monitoring" {
   default     = true
 }
 
-variable "create_s3_bucket" {
-  type        = bool
-  description = "Create Firehose S3 backup bucket"
-  default     = true
-}
-
 variable "s3_bucket_name" {
   type        = string
   description = "Firehose S3 backup bucket name"
-}
-
-variable "s3_bucket_arn" {
-  type        = string
-  description = "Firehose S3 backup bucket ARN. Required if `create_s3_bucket` is false"
-  default     = ""
 }
 
 variable "firehose_stream_name" {

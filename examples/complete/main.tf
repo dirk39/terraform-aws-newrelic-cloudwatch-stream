@@ -7,5 +7,8 @@ module "newrelic_integration" {
 
   newrelic_iam_role_license_key = "123"
   newrelic_iam_enable_budget_monitoring = true
-  s3_bucket_name = "newrelic-firehose-backup-bucket" 
+  s3_bucket_name = "newrelic-firehose-backup-bucket"
+
+  firehose_stream_name = "FirehoseStreamToNewRelic"
+  firehose_datacenter_region = "EU" 
 }

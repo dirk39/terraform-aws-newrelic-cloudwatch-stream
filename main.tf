@@ -9,7 +9,6 @@ locals {
 
 ### IAM ###
 resource "aws_iam_role" "newrelic_monitoring_role" {
-  count              = var.create_newrelic_iam ? 1 : 0
   name               = var.newrelic_iam_role_name
   description        = var.newrelic_iam_role_description
   assume_role_policy = data.aws_iam_policy_document.newrelic_monitoring_role_policy.json
@@ -17,8 +16,7 @@ resource "aws_iam_role" "newrelic_monitoring_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "newrelic_monitoring_role_readonly" {
-  count      = var.create_newrelic_iam ? 1 : 0
-  role       = aws_iam_role.newrelic_monitoring_role[0].id
+  role       = aws_iam_role.newrelic_monitoring_role.id
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
@@ -40,9 +38,9 @@ data "aws_iam_policy_document" "newrelic_monitoring_role_policy" {
 
 # Cost explorer
 resource "aws_iam_role_policy" "newrelic_monitoring_role_cost" {
-  count  = var.create_newrelic_iam && var.newrelic_iam_enable_budget_monitoring ? 1 : 0
+  count  = var.newrelic_iam_enable_budget_monitoring ? 1 : 0
   name   = "BudgetPolicy"
-  role   = aws_iam_role.newrelic_monitoring_role[0].id
+  role   = aws_iam_role.newrelic_monitoring_role.id
   policy = <<EOF
 {
     "Statement": [
@@ -60,13 +58,11 @@ EOF
 }
 
 resource "aws_s3_bucket" "s3_firehose_backup_bucket" {
-  count  = var.create_s3_bucket ? 1 : 0
   bucket = var.s3_bucket_name
 }
 
 resource "aws_s3_bucket_public_access_block" "s3_firehose_backup_bucket" {
-  count  = var.create_s3_bucket ? 1 : 0
-  bucket = aws_s3_bucket.s3_firehose_backup_bucket[0].id
+  bucket = aws_s3_bucket.s3_firehose_backup_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -76,8 +72,7 @@ resource "aws_s3_bucket_public_access_block" "s3_firehose_backup_bucket" {
 
 
 resource "aws_s3_bucket_acl" "s3_firehose_backup_bucket" {
-  count  = var.create_s3_bucket ? 1 : 0
-  bucket = aws_s3_bucket.s3_firehose_backup_bucket[0].id
+  bucket = aws_s3_bucket.s3_firehose_backup_bucket.id
   acl    = "private"
 }
 
@@ -87,7 +82,7 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose_newrelic_metric_stream
 
   s3_configuration {
     role_arn           = aws_iam_role.firehose_newrelic_metric_stream.arn
-    bucket_arn         = try(aws_s3_bucket.s3_firehose_backup_bucket.arn, var.s3_bucket_arn)
+    bucket_arn         = aws_s3_bucket.s3_firehose_backup_bucket.arn
     buffer_size        = 10
     buffer_interval    = 400
     compression_format = "GZIP"
@@ -96,7 +91,7 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose_newrelic_metric_stream
   http_endpoint_configuration {
     url                = local.datacenters[var.firehose_datacenter_region]
     name               = "New Relic"
-    access_key         = var.newrelic_license_key
+    access_key         = var.newrelic_iam_role_license_key
     buffering_size     = 1
     buffering_interval = 60
     role_arn           = aws_iam_role.firehose_newrelic_metric_stream.arn
@@ -132,7 +127,7 @@ data "aws_iam_policy_document" "firehose_newrelic_metric_stream_assume_role" {
 }
 
 resource "aws_iam_role_policy" "firehose_newrelic_metric_stream" {
-  role   = aws_iam_role.iam_kinesis_firehose_newrelic.id
+  role   = aws_iam_role.firehose_newrelic_metric_stream.id
   policy = data.aws_iam_policy_document.firehose_newrelic_metric_stream_policy.json
 }
 
@@ -148,8 +143,8 @@ data "aws_iam_policy_document" "firehose_newrelic_metric_stream_policy" {
       "s3:PutObject"
     ]
     resources = [
-      try(aws_s3_bucket.s3_firehose_backup_bucket.arn, var.s3_bucket_arn),
-      format("%s/*", try(aws_s3_bucket.s3_firehose_backup_bucket.arn, var.s3_bucket_arn))
+      aws_s3_bucket.s3_firehose_backup_bucket.arn,
+      "${aws_s3_bucket.s3_firehose_backup_bucket.arn}/*"
     ]
   }
 }
