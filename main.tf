@@ -9,7 +9,7 @@ resource "aws_iam_role" "newrelic_monitoring_role" {
 
 resource "aws_iam_role_policy_attachment" "newrelic_monitoring_role_readonly" {
   count      = var.create_newrelic_iam ? 1 : 0
-  role       = aws_iam_role.newrelic_monitoring_role.id
+  role       = aws_iam_role.newrelic_monitoring_role[0].id
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
@@ -33,7 +33,7 @@ data "aws_iam_policy_document" "newrelic_monitoring_role_policy" {
 resource "aws_iam_role_policy" "newrelic_monitoring_role_cost" {
   count  = var.create_newrelic_iam && var.newrelic_iam_enable_budget_monitoring ? 1 : 0
   name   = "BudgetPolicy"
-  role   = aws_iam_role.newrelic_monitoring_role.id
+  role   = aws_iam_role.newrelic_monitoring_role[0].id
   policy = <<EOF
 {
     "Statement": [

@@ -36,4 +36,5 @@ variable "newrelic_iam_role_license_key" {
 variable "newrelic_iam_enable_budget_monitoring" {
   type        = bool
   description = "Enable budget cost monitoring"
+  default     = true
 }
