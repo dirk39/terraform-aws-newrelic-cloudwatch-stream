@@ -50,6 +50,28 @@ resource "aws_iam_role_policy" "newrelic_monitoring_role_cost" {
 EOF
 }
 
+resource "aws_s3_bucket" "s3_firehose_backup_bucket" {
+  count  = var.create_s3_bucket ? 1 : 0
+  bucket = var.s3_bucket_name
+}
+
+resource "aws_s3_bucket_public_access_block" "s3_firehose_backup_bucket" {
+  count  = var.create_s3_bucket ? 1 : 0
+  bucket = aws_s3_bucket.s3_firehose_backup_bucket[0].id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+
+resource "aws_s3_bucket_acl" "s3_firehose_backup_bucket" {
+  count  = var.create_s3_bucket ? 1 : 0
+  bucket = aws_s3_bucket.s3_firehose_backup_bucket[0].id
+  acl    = "private"
+}
+
 
 ### CLOUDWATCH STREAM ###
 # resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
@@ -193,22 +215,4 @@ EOF
 #       content_encoding = "GZIP"
 #     }
 #   }
-# }
-
-# ### S3 -> rework without module
-# module "newrelic_s3" {
-#   source  = "terraform-aws-modules/s3-bucket/aws//"
-#   version = "~> 3.4.0"
-
-#   bucket = "${var.environment}-myreco-newrelic-bucket"
-#   acl    = "private"
-#   tags = merge(var.tags, {
-#     name        = "${var.environment}-myreco-newrelic-bucket"
-#     description = "Bucket to store failed pushed to NewRelic"
-#   })
-
-#   block_public_acls       = true
-#   block_public_policy     = true
-#   ignore_public_acls      = true
-#   restrict_public_buckets = true
 # }

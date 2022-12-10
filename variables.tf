@@ -38,3 +38,20 @@ variable "newrelic_iam_enable_budget_monitoring" {
   description = "Enable budget cost monitoring"
   default     = true
 }
+
+variable "create_s3_bucket" {
+  type        = bool
+  description = "Create Firehose S3 backup bucket"
+  default     = true
+}
+
+variable "s3_bucket_name" {
+  type        = string
+  description = "Firehose S3 backup bucket name"
+}
+
+variable "s3_bucket_arn" {
+  type        = string
+  description = "Firehose S3 backup bucket ARN. Required if `create_s3_bucket` is false"
+  default     = ""
+}
