@@ -31,7 +31,7 @@ data "aws_iam_policy_document" "newrelic_monitoring_role_policy" {
     condition {
       test     = "StringEquals"
       variable = "sts:ExternalId"
-      values   = [var.newrelic_iam_role_license_key]
+      values   = [var.newrelic_iam_role_account_number]
     }
   }
 }

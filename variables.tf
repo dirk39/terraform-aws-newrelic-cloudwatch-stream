@@ -22,6 +22,11 @@ variable "newrelic_iam_role_aws_account_id" {
   default     = "754728514883"
 }
 
+variable "newrelic_iam_role_account_number" {
+  type        = string
+  description = "Newrelic account number to send data"
+}
+
 variable "newrelic_iam_role_license_key" {
   type        = string
   description = "NewRelic license key"
@@ -54,7 +59,7 @@ variable "cw_metric_stream_name" {
 }
 
 variable "cw_metric_stream_filters" {
-  type        = list
+  type        = list(any)
   description = "List of namespaces to include. If omitted, exports all metrics"
   default     = []
 }
