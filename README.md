@@ -6,7 +6,8 @@ Made with love by [![Open Source Saturday](https://img.shields.io/badge/%E2%9D%A
 ## Usage
 ```hcl
 module "newrelic_integration" {
-  source = "../.."
+  source  = "dirk39/newrelic-cloudwatch-stream/aws"
+  version = "0.1.1"
 
   newrelic_account_number  = "123"
   newrelic_license_key     = "456"
