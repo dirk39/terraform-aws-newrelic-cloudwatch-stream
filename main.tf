@@ -9,10 +9,10 @@ locals {
 
 ### IAM ###
 resource "aws_iam_role" "newrelic_monitoring_role" {
-  name               = var.newrelic_iam_role_name
-  description        = var.newrelic_iam_role_description
+  name               = var.role_name
+  description        = var.role_description
   assume_role_policy = data.aws_iam_policy_document.newrelic_monitoring_role_policy.json
-  tags               = var.newrelic_iam_role_tags
+  tags               = var.role_tags
 }
 
 resource "aws_iam_role_policy_attachment" "newrelic_monitoring_role_readonly" {
@@ -26,19 +26,19 @@ data "aws_iam_policy_document" "newrelic_monitoring_role_policy" {
     actions = ["sts:AssumeRole"]
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${var.newrelic_iam_role_aws_account_id}:root"]
+      identifiers = ["arn:aws:iam::${var.newrelic_aws_account_id}:root"]
     }
     condition {
       test     = "StringEquals"
       variable = "sts:ExternalId"
-      values   = [var.newrelic_iam_role_account_number]
+      values   = [var.newrelic_account_number]
     }
   }
 }
 
 # Cost explorer
 resource "aws_iam_role_policy" "newrelic_monitoring_role_cost" {
-  count  = var.newrelic_iam_enable_budget_monitoring ? 1 : 0
+  count  = var.enable_budget_monitoring ? 1 : 0
   name   = "BudgetPolicy"
   role   = aws_iam_role.newrelic_monitoring_role.id
   policy = <<EOF
@@ -91,7 +91,7 @@ resource "aws_kinesis_firehose_delivery_stream" "firehose_newrelic_metric_stream
   http_endpoint_configuration {
     url                = local.datacenters[var.firehose_datacenter_region]
     name               = "New Relic"
-    access_key         = var.newrelic_iam_role_license_key
+    access_key         = var.newrelic_license_key
     buffering_size     = 1
     buffering_interval = 60
     role_arn           = aws_iam_role.firehose_newrelic_metric_stream.arn
