@@ -41,9 +41,9 @@ module "newrelic_integration" {
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
-| <a name="cw_metric_stream_filters"></a> [cw\_metric\_stream\_filters](#cw\_metric\_stream\_filters) | List of namespaces to include. If omitted, exports all metrics | `list(string)` | [] |
-| <a name="role_name"></a> [role\_name](#role\_name) | IAM role name | `string` | `"NewRelicMonitoringRole"` |  |
-| <a name="role_description"></a> [role\_description](#role\_description) | IAM role description | `string` | `"Role used by NewRelic infrastructure to monitor the account"` |
-| <a name="role_tags"></a> [role\_tags](#role\_tags) | IAM role tags | `map(string)` | {} |
-| <a name="newrelic_aws_account_id"></a> [newrelic\_aws\_account\_id](#newrelic\_aws\_account\_id) | NewRelic AWS account id to trust | `string` | 754728514883 |
+| <a name="cw_metric_stream_filters"></a> [cw\_metric\_stream\_filters](#cw\_metric\_stream\_filters) | List of namespaces to include. If omitted, exports all metrics | `list(string)` | `[]` |
 | <a name="enable_budget_monitoring"></a> [enable\_budget\_monitoring](#enable\_budget\_monitoring) | Enable budget cost monitoring | `bool` | `true` |
+| <a name="newrelic_aws_account_id"></a> [newrelic\_aws\_account\_id](#newrelic\_aws\_account\_id) | NewRelic AWS account id to trust | `string` | `754728514883` |
+| <a name="role_description"></a> [role\_description](#role\_description) | IAM role description | `string` | `"Role used by NewRelic infrastructure to monitor the account"` |
+| <a name="role_name"></a> [role\_name](#role\_name) | IAM role name | `string` | `"NewRelicMonitoringRole"` |  |
+| <a name="role_tags"></a> [role\_tags](#role\_tags) | IAM role tags | `map(string)` | {} |
