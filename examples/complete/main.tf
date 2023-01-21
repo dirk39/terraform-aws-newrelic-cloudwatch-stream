@@ -5,7 +5,8 @@ provider "aws" {
 module "newrelic_integration" {
   source = "../.."
 
-  newrelic_license_key  = "123"
+  newrelic_account_number  = "123"
+  newrelic_license_key     = "456"
   enable_budget_monitoring = true
   s3_bucket_name           = "newrelic-firehose-backup-bucket"
 

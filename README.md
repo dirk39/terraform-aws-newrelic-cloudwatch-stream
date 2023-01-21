@@ -6,12 +6,12 @@ Made with love by [![Open Source Saturday](https://img.shields.io/badge/%E2%9D%A
 ## Usage
 ```hcl
 module "newrelic_integration" {
-  source = "dirk39/newrelic-cloudwatch-stream/aws"
-  version = "1.0.0"
+  source = "../.."
 
-  newrelic_license_key         = "123"
+  newrelic_account_number  = "123"
+  newrelic_license_key     = "456"
   enable_budget_monitoring = true
-  s3_bucket_name                        = "newrelic-firehose-backup-bucket"
+  s3_bucket_name           = "newrelic-firehose-backup-bucket"
 
   firehose_stream_name       = "FirehoseStreamToNewRelic"
   firehose_datacenter_region = "EU"
